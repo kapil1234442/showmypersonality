@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personality Quiz — Types A/B/C/D</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+  <div class="max-w-5xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-2 text-center">Personality Quiz — Types A / B / C / D</h1>
+    <p class="text-center text-gray-600 mb-8">Each option corresponds to: 1️⃣ Type A | 2️⃣ Type B | 3️⃣ Type C | 4️⃣ Type D</p>
+
+    <form id="quizForm" class="space-y-6">
+      <div id="questions" class="space-y-6"></div>
+      <div class="flex flex-wrap justify-center gap-4 mt-8">
+        <button id="calcBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-lg">Show My Personality</button>
+        <button id="clearBtn" type="button" class="border border-gray-300 hover:bg-gray-100 px-5 py-2 rounded-lg">Clear Answers</button>
+      </div>
+    </form>
+
+    <div id="result" class="mt-10 hidden">
+      <h2 class="text-xl font-semibold mb-4 text-center">Your Personality Result</h2>
+      <canvas id="resultChart" class="w-full max-w-lg mx-auto"></canvas>
+      <div id="resultDetails" class="mt-6 text-center text-gray-700"></div>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      // 24 organizational behaviour + 8 student life
+      "Your team has a project deadline approaching fast. How do you handle it?",
+      "During a meeting, someone disagrees with your idea.",
+      "You are assigned as team leader for a new project.",
+      "When your team underperforms, you—",
+      "You are in a meeting running longer than planned.",
+      "You're preparing a presentation for your boss.",
+      "You face a sudden organizational change.",
+      "While working in a team, you prefer—",
+      "When given a challenging goal, you—",
+      "Your colleague takes credit for your work.",
+      "You are asked to multitask at work.",
+      "You receive constructive criticism.",
+      "You're assigned a high-pressure sales target.",
+      "During an office conflict, you—",
+      "When working late hours—",
+      "A teammate is slow with their work.",
+      "In group projects, your focus is on—",
+      "When your boss suddenly changes instructions—",
+      "Your department faces a crisis.",
+      "Your work is being monitored strictly.",
+      "When someone praises your work—",
+      "You are expected to lead a corporate event.",
+      "A client complains about your service.",
+      "You have to give feedback to a peer.",
+      "During exam preparation—",
+      "Your group is organizing a college fest.",
+      "When exams are announced suddenly—",
+      "A friend forgets to bring project materials.",
+      "During college celebrations—",
+      "You are preparing for a competition.",
+      "You are working on a group assignment.",
+      "You face multiple deadlines and personal commitments."
+    ];
+
+    const options = [
+      "I take control, push for results, and get anxious if others are slow.",
+      "I stay calm, enjoy the process, and trust others to manage.",
+      "I follow a plan carefully and focus on accuracy.",
+      "I feel worried, prefer to avoid conflict, and get stressed internally."
+    ];
+
+    const qContainer = document.getElementById('questions');
+
+    questions.forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'bg-white p-4 rounded-lg shadow';
+      div.innerHTML = `<h3 class='font-semibold mb-2'>Q${i + 1}. ${q}</h3>` +
+        options.map((opt, j) => `
+          <label class='block border rounded-lg px-3 py-2 mb-2 hover:bg-blue-50'>
+            <input type='radio' name='q${i + 1}' value='${j + 1}' class='mr-2'>${opt}
+          </label>
+        `).join('');
+      qContainer.appendChild(div);
+    });
+
+    document.getElementById('calcBtn').addEventListener('click', () => {
+      const data = new FormData(document.getElementById('quizForm'));
+      const counts = { A: 0, B: 0, C: 0, D: 0 };
+      let answered = 0;
+      for (let i = 1; i <= 32; i++) {
+        const v = data.get('q' + i);
+        if (v) {
+          answered++;
+          if (v === '1') counts.A++;
+          if (v === '2') counts.B++;
+          if (v === '3') counts.C++;
+          if (v === '4') counts.D++;
+        }
+      }
+
+      const total = counts.A + counts.B + counts.C + counts.D;
+      if (total === 0) {
+        alert('Please answer at least one question!');
+        return;
+      }
+
+      const pct = {
+        A: Math.round((counts.A / total) * 100),
+        B: Math.round((counts.B / total) * 100),
+        C: Math.round((counts.C / total) * 100),
+        D: Math.round((counts.D / total) * 100)
+      };
+
+      document.getElementById('result').classList.remove('hidden');
+
+      const ctx = document.getElementById('resultChart').getContext('2d');
+      if (window.resultChart) window.resultChart.destroy();
+      window.resultChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Type A', 'Type B', 'Type C', 'Type D'],
+          datasets: [{
+            label: 'Personality Type Percentage',
+            data: [pct.A, pct.B, pct.C, pct.D],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: 'Percentage (%)' } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const maxVal = Math.max(pct.A, pct.B, pct.C, pct.D);
+      const topTypes = Object.keys(pct).filter(k => pct[k] === maxVal);
+      const desc = {
+        A: 'Competitive, ambitious, action-oriented. Likes to take charge and push for quick results.',
+        B: 'Relaxed, easy-going, sociable. Prefers balance and harmony.',
+        C: 'Detail-focused, analytical, perfectionist. Values accuracy and organization.',
+        D: 'Reserved, sensitive, prone to worry. Avoids conflict and internalizes stress.'
+      };
+
+      document.getElementById('resultDetails').innerHTML = `
+        <p class='text-lg font-medium mb-2'>You answered ${answered} questions.</p>
+        <p class='text-lg'><strong>Your dominant personality type:</strong> ${topTypes.map(t => 'Type ' + t).join(' & ')}</p>
+        <div class='mt-4 space-y-2'>${topTypes.map(t => `<p><strong>Type ${t}:</strong> ${desc[t]}</p>`).join('')}</div>
+      `;
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('quizForm').reset();
+      document.getElementById('result').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
